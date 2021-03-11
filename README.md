@@ -1,2 +1,7 @@
-# Deep_learning
+# Deep learning
 Deep learning course and projects
+
+
+First project : 
+
+## Bucharest housing dataset
