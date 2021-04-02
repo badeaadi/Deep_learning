@@ -13,8 +13,8 @@ class Args():
   def __init__(self):
       self.batch_size = 256
       self.test_batch_size = 64
-      self.epochs = 15
-      self.lr = 5e-4
+      self.epochs = 50
+      self.lr = 1e-3
       self.momentum = 0.9
       self.seed = 1
       self.log_interval = int(1000 / self.batch_size)
@@ -36,10 +36,9 @@ no_filters3 = 150
 
 no_neurons1 = 1024
 no_neurons2 = 128
-no_neurons3 = 32
 out_features = 2
 
-in_features = 150 * 59
+in_features = 62 * 100
 
 class CNN(nn.Module):
 
@@ -48,13 +47,11 @@ class CNN(nn.Module):
 
         self.conv1 = nn.Conv1d(in_channels = in_channels, out_channels = no_filters1, kernel_size = 5, stride = 1)
         self.conv2 = nn.Conv1d(in_channels = no_filters1, out_channels = no_filters2, kernel_size = 3, stride = 1)
-        self.conv3 = nn.Conv1d(in_channels = no_filters2, out_channels = no_filters3, kernel_size = 4, stride = 1)
-     
+       
         self.fc1 = nn.Linear(in_features = in_features, out_features = no_neurons1)
         self.fc2 = nn.Linear(in_features = no_neurons1, out_features = no_neurons2)
-        self.fc3 = nn.Linear(in_features = no_neurons2, out_features = no_neurons3)
-        self.fc4 = nn.Linear(in_features = no_neurons3, out_features = out_features)
-     
+        self.fc3 = nn.Linear(in_features = no_neurons2, out_features = out_features)
+        
     def forward(self, x):
       
         x = F.relu(self.conv1(x))
@@ -67,16 +64,13 @@ class CNN(nn.Module):
          
         # print(x.shape)
         
-        x = F.relu(self.conv3(x))
-        
         # print(x.shape)
         
         x = x.view(args.batch_size, -1)
                 
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = self.fc4(x)
+        x = self.fc3(x)
             
         return F.log_softmax(x, dim = 1)
 
