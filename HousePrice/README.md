@@ -31,4 +31,3 @@ Using all of these monthly averages, a clusterization algorithm grouped them int
 Compare the results of the two approaches, displaying the Confusion Matrix for the two, as well as any comparing any other metrics you think are interesting (e.g. MSE). Comment on the results;
 - Choose to predict a feature more suitable to be treated as a regression problem, then successfully solve it.
 
-## MNIST Classification
