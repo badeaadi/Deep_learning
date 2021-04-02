@@ -6,37 +6,82 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 from matplotlib import pyplot
 
-in_channels = 23
-no_filters1 = 46
-no_filters2 = 92
-no_neurons1 = 2000
 
-in_features = 46 * 250
+kwargs={}
+
+class Args():
+  def __init__(self):
+      self.batch_size = 256
+      self.test_batch_size = 64
+      self.epochs = 15
+      self.lr = 5e-4
+      self.momentum = 0.9
+      self.seed = 1
+      self.log_interval = int(1000 / self.batch_size)
+      self.cuda = True
+
+args = Args()
+
+use_cuda = torch.cuda.is_available()
+torch.manual_seed(args.seed)
+device = torch.device("cuda" if use_cuda else "cpu")
+
+kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+
+
+in_channels = 23
+no_filters1 = 50
+no_filters2 = 100
+no_filters3 = 150
+
+no_neurons1 = 1024
+no_neurons2 = 128
+no_neurons3 = 32
+out_features = 2
+
+in_features = 150 * 59
 
 class CNN(nn.Module):
 
     def __init__(self):
         super().__init__()
 
-        self.conv1 = nn.Conv1d(in_channels = in_channels, out_channels = no_filters1, kernel_size = 7, stride = 1)
-        self.conv2 = nn.Conv1d(in_channels = no_filters1, out_channels = no_filters2, kernel_size = 4, stride = 2)
-        
+        self.conv1 = nn.Conv1d(in_channels = in_channels, out_channels = no_filters1, kernel_size = 5, stride = 1)
+        self.conv2 = nn.Conv1d(in_channels = no_filters1, out_channels = no_filters2, kernel_size = 3, stride = 1)
+        self.conv3 = nn.Conv1d(in_channels = no_filters2, out_channels = no_filters3, kernel_size = 4, stride = 1)
+     
         self.fc1 = nn.Linear(in_features = in_features, out_features = no_neurons1)
-        self.fc2 = nn.Linear(in_features = no_neurons1, out_features = 2)
+        self.fc2 = nn.Linear(in_features = no_neurons1, out_features = no_neurons2)
+        self.fc3 = nn.Linear(in_features = no_neurons2, out_features = no_neurons3)
+        self.fc4 = nn.Linear(in_features = no_neurons3, out_features = out_features)
      
     def forward(self, x):
       
         x = F.relu(self.conv1(x))
-    
-        x = x.view(-1, in_features)
+        x = F.max_pool1d(x, 2)
+        
+        # print(x.shape)
+        
+        x = F.relu(self.conv2(x))
+        x = F.max_pool1d(x, 2)
+         
+        # print(x.shape)
+        
+        x = F.relu(self.conv3(x))
+        
+        # print(x.shape)
+        
+        x = x.view(args.batch_size, -1)
                 
         x = F.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = self.fc4(x)
             
         return F.log_softmax(x, dim = 1)
 
 
-def train(args, model, device, train_loader, optimizer, epoch, weight_loss):
+def train(args, model, device, train_loader, optimizer, epoch):
     
     model.train()
 
@@ -50,7 +95,7 @@ def train(args, model, device, train_loader, optimizer, epoch, weight_loss):
         optimizer.zero_grad()
         
         output = model(data)
-        loss = F.nll_loss(output, target, weight = weight_loss)
+        loss = F.nll_loss(output, target)
         
         all_losses.append(loss.detach().cpu().numpy())
         
@@ -79,10 +124,14 @@ def test(args, model, device, test_loader):
             output = model(data)
             
             test_loss += F.nll_loss(output, target)
-
+            
+            output = np.e ** output
+            
+            
             pred = output.argmax(dim=1, keepdim=True)
             
             print('Predicted 1s : {}'.format(torch.sum(pred)))
+
             
             correct += pred.eq(target.view_as(pred)).float().mean().item()
             
@@ -95,28 +144,6 @@ def test(args, model, device, test_loader):
     return test_loss, test_accuracy
 
 
-
-
-kwargs={}
-
-class Args():
-  def __init__(self):
-      self.batch_size = 256
-      self.test_batch_size = 64
-      self.epochs = 100
-      self.lr = 0.05
-      self.momentum = 0.9
-      self.seed = 1
-      self.log_interval = int(1000 / self.batch_size)
-      self.cuda = True
-
-args = Args()
-
-use_cuda = torch.cuda.is_available()
-torch.manual_seed(args.seed)
-device = torch.device("cuda" if use_cuda else "cpu")
-
-kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
 
 
@@ -139,11 +166,13 @@ dataset_labels = dataset_labels.to(device)
 
 
 
-weight_loss = torch.zeros(2, dtype = float).float()
+#3 weight_loss = torch.zeros(2, dtype = float).float()
 
-weight_loss[0] = np.sum(labels) / labels.shape[0]
-weight_loss[1] = (labels.shape[0] - np.sum(labels)) / labels.shape[0]
-print(weight_loss)
+# weight_loss[0] = np.sum(labels) / labels.shape[0]
+# weight_loss[1] = (labels.shape[0] - np.sum(labels)) / labels.shape[0]
+# print(weight_loss)
+
+
 
 
 train_dataset = TensorDataset(dataset_signals[:no_train], dataset_labels[:no_train])
@@ -154,7 +183,7 @@ test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True,
 
 
 model= CNN().to(device).float()
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum = args.momentum)
 
 losses_train = []
 losses_test = []
@@ -162,7 +191,7 @@ accuracy_test = []
 
 for epoch in range(1, args.epochs + 1):
   
-    train_loss = train(args, model, device, train_loader, optimizer, epoch, weight_loss)
+    train_loss = train(args, model, device, train_loader, optimizer, epoch)
     test_loss, test_accuracy = test(args, model, device, test_loader)
 
     losses_train.append(train_loss)
