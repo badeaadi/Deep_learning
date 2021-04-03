@@ -87,22 +87,23 @@ seizure_bufs = []
 
 count = 0
 
-for i in range(count * 100, min((count + 1) * 100, len(records))):
-    if i % 10 == 0:
-        gc.collect()
-        
+DROPOUT_RATE = 200
+
+# for i in range(count * 100, min((count + 1) * 100, len(records))):
+for i in range(0, 200):
+
     print(i)
     seiz = False
-    
+
     print(records[i])
-    
+
     if (records[i] in seizure_records):
         seiz = True
         print('Seizure')
 
     record = records[i]
     f = pyedflib.EdfReader("data/" + record)
-    
+
     n = f.signals_in_file
 
     sigbufs = np.zeros((n, f.getNSamples()[0]))
@@ -111,10 +112,10 @@ for i in range(count * 100, min((count + 1) * 100, len(records))):
 
     sigbufs_reshaped = np.reshape(sigbufs, (sigbufs.shape[0], -1, 256))
     nonseizure_count = 0
-    
+
     if seiz == False:
         for j in range(sigbufs_reshaped.shape[1]):
-            if nonseizure_count % 30 == 0:
+            if nonseizure_count % DROPOUT_RATE == 0:
                 nonseizure_bufs.append(sigbufs_reshaped[:23, j, :])
 
             nonseizure_count += 1
@@ -125,7 +126,7 @@ for i in range(count * 100, min((count + 1) * 100, len(records))):
                 seizs.append(s)
 
         for j in range(sigbufs_reshaped.shape[1]):
-         
+
             ok = False
             for s in seizs:
                 if j >= s[1] and j <= s[2]:
@@ -134,9 +135,8 @@ for i in range(count * 100, min((count + 1) * 100, len(records))):
                     break
 
             if ok == False:
-                if nonseizure_count % 30 == 0:
+                if nonseizure_count % DROPOUT_RATE == 0:
                     nonseizure_bufs.append(sigbufs_reshaped[:23, j, :])
-                    
 
                 nonseizure_count += 1
 
