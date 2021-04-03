@@ -114,8 +114,8 @@ for i in range(count * 100, min((count + 1) * 100, len(records))):
     
     if seiz == False:
         for j in range(sigbufs_reshaped.shape[1]):
-            if nonseizure_count % 500 == 0:
-                nonseizure_bufs.append(sigbufs_reshaped[:, j, :])
+            if nonseizure_count % 30 == 0:
+                nonseizure_bufs.append(sigbufs_reshaped[:23, j, :])
 
             nonseizure_count += 1
     else:
@@ -129,13 +129,13 @@ for i in range(count * 100, min((count + 1) * 100, len(records))):
             ok = False
             for s in seizs:
                 if j >= s[1] and j <= s[2]:
-                    seizure_bufs.append(sigbufs_reshaped[:, j, :])
+                    seizure_bufs.append(sigbufs_reshaped[:23, j, :])
                     ok = True
                     break
 
             if ok == False:
-                if nonseizure_count % 500 == 0:
-                    nonseizure_bufs.append(sigbufs_reshaped[:, j, :])
+                if nonseizure_count % 30 == 0:
+                    nonseizure_bufs.append(sigbufs_reshaped[:23, j, :])
                     
 
                 nonseizure_count += 1
