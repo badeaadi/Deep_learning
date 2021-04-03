@@ -11,13 +11,13 @@ kwargs={}
 
 class Args():
   def __init__(self):
-      self.batch_size = 256
-      self.test_batch_size = 64
-      self.epochs = 50
-      self.lr = 1e-3
+      
+      self.batch_size = 512
+      self.epochs = 20
+      self.lr = 5e-4
       self.momentum = 0.9
       self.seed = 1
-      self.log_interval = int(1000 / self.batch_size)
+      self.log_interval = int(2000 / self.batch_size)
       self.cuda = True
 
 args = Args()
@@ -35,7 +35,8 @@ no_filters2 = 100
 no_filters3 = 150
 
 no_neurons1 = 1024
-no_neurons2 = 128
+no_neurons2 = 256
+no_neurons3 = 16
 out_features = 2
 
 in_features = 62 * 100
@@ -50,8 +51,8 @@ class CNN(nn.Module):
        
         self.fc1 = nn.Linear(in_features = in_features, out_features = no_neurons1)
         self.fc2 = nn.Linear(in_features = no_neurons1, out_features = no_neurons2)
-        self.fc3 = nn.Linear(in_features = no_neurons2, out_features = out_features)
-        
+        self.fc3 = nn.Linear(in_features = no_neurons2, out_features = no_neurons3)
+        self.fc4 = nn.Linear(in_features = no_neurons3, out_features = out_features)
     def forward(self, x):
       
         x = F.relu(self.conv1(x))
@@ -64,18 +65,17 @@ class CNN(nn.Module):
          
         # print(x.shape)
         
-        # print(x.shape)
-        
         x = x.view(args.batch_size, -1)
                 
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = F.relu(self.fc3(x))
+        x = self.fc4(x)
             
         return F.log_softmax(x, dim = 1)
 
 
-def train(args, model, device, train_loader, optimizer, epoch):
+def train(args, model, device, train_loader, optimizer, epoch, weight):
     
     model.train()
 
@@ -89,7 +89,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         
         output = model(data)
-        loss = F.nll_loss(output, target)
+        loss = F.nll_loss(output, target, weight)
         
         all_losses.append(loss.detach().cpu().numpy())
         
@@ -103,7 +103,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             
     return np.array(all_losses).mean()
 
-def test(args, model, device, test_loader):
+def test(args, model, device, test_loader, weight):
     
     model.eval()
     test_loss = 0
@@ -117,7 +117,7 @@ def test(args, model, device, test_loader):
             data, target = data.to(device).float(), target.to(device).long()
             output = model(data)
             
-            test_loss += F.nll_loss(output, target)
+            test_loss += F.nll_loss(output, target, weight)
             
             output = np.e ** output
             
@@ -159,12 +159,17 @@ dataset_signals = dataset_signals.to(device)
 dataset_labels = dataset_labels.to(device)
 
 
+'''
+creste weight_loss[0] daca vrei sa prezica mai mult 0
 
-#3 weight_loss = torch.zeros(2, dtype = float).float()
+'''
+weight_loss = torch.zeros(2, dtype = float).float()
 
-# weight_loss[0] = np.sum(labels) / labels.shape[0]
-# weight_loss[1] = (labels.shape[0] - np.sum(labels)) / labels.shape[0]
-# print(weight_loss)
+weight_loss[0] = np.sum(labels) / labels.shape[0]
+
+weight_loss[1] = (labels.shape[0] - np.sum(labels)) / labels.shape[0]
+
+print('Weight loss tensor : {}'.format(weight_loss))
 
 
 
@@ -185,8 +190,8 @@ accuracy_test = []
 
 for epoch in range(1, args.epochs + 1):
   
-    train_loss = train(args, model, device, train_loader, optimizer, epoch)
-    test_loss, test_accuracy = test(args, model, device, test_loader)
+    train_loss = train(args, model, device, train_loader, optimizer, epoch, weight_loss)
+    test_loss, test_accuracy = test(args, model, device, test_loader, weight_loss)
 
     losses_train.append(train_loss)
     losses_test.append(test_loss)
