@@ -6,28 +6,6 @@ import librosa.display
 import re
 import gc
 
-# file_name = "../chbmit-1.0.0.physionet.org/chb01/chb01_03.edf"
-# f = pyedflib.EdfReader(file_name)
-
-# n = f.signals_in_file
-# signal_labels = f.getSignalLabels()
-# sigbufs = np.zeros((n, f.getNSamples()[0]))
-# for i in np.arange(n):
-#     sigbufs[i, :] = f.readSignal(i)
-
-# print(sigbufs)
-# print(signal_labels)
-# print(n)
-# print(f.datarecords_in_file)
-# print(f.datarecord_duration)
-
-# mfcc = librosa.stft(sigbufs[20], n_fft=8192,
-#                     win_length=2048, center=True)
-# xstft = librosa.amplitude_to_db(abs(mfcc))
-
-# librosa.display.specshow(xstft, x_axis='time', sr=256)
-# plt.colorbar()
-# plt.show()
 
 gc.enable()
 
@@ -85,13 +63,11 @@ seizure_bufs = []
 
 # print(records.index("chb04/chb04_28.edf"))
 
-count = 0
+count = 3
 
-DROPOUT_RATE = 200
+DROPOUT_RATE = 60
 
-# for i in range(count * 100, min((count + 1) * 100, len(records))):
-for i in range(0, 200):
-
+for i in range(count * 100, min((count + 1) * 100, len(records))):
     print(i)
     seiz = False
 
@@ -99,19 +75,22 @@ for i in range(0, 200):
 
     if (records[i] in seizure_records):
         seiz = True
-        print('Seizure')
 
     record = records[i]
     f = pyedflib.EdfReader("data/" + record)
 
     n = f.signals_in_file
-
+    
+    if n < 23:
+        continue
+    
     sigbufs = np.zeros((n, f.getNSamples()[0]))
     for i in np.arange(n):
         sigbufs[i, :] = f.readSignal(i)
 
     sigbufs_reshaped = np.reshape(sigbufs, (sigbufs.shape[0], -1, 256))
-    nonseizure_count = 0
+    
+    nonseizure_count = int(np.random.rand(1) * 100)
 
     if seiz == False:
         for j in range(sigbufs_reshaped.shape[1]):
@@ -140,12 +119,13 @@ for i in range(0, 200):
 
                 nonseizure_count += 1
 
+
+
 nonseizure_bufs = np.array(nonseizure_bufs)
 
 print(nonseizure_bufs.shape)
 
 seizure_bufs = np.array(seizure_bufs)
-
 
 print(seizure_bufs.shape)
 
@@ -158,31 +138,37 @@ bufs_labels = np.concatenate(
 
 print(bufs_labels.shape)
 
-mfccs = []
-
-'''
-for channel in range(0, 23):
-
-        mfcc = librosa.feature.mfcc(y=bufs[i:i, channel, :].flatten(), sr=256, n_mfcc=32)
-        print(mfcc.shape)
-    
-        mfccs.append(mfcc)
-
-mfccs = np.array(mfccs)
-print(mfccs.shape)
-'''
-
 np.savez("signals" + str(count) + ".npz", signals=bufs, labels=bufs_labels)
-# bufs = []
 
-# for i in range(0, 2):
-#     record = records[i]
-#     f = pyedflib.EdfReader(record)
 
-#     n = f.signals_in_file
 
-#     sigbufs = np.zeros((n, f.getNSamples()[0]))
-#     for i in np.arange(n):
-#         sigbufs[i, :] = f.readSignal(i)
 
-#     bufs.append(sigbufs)
+
+
+
+def concatenate_datasets(a : int, b : int):
+    
+    all_signals = np.empty((0, 23, 256))
+    all_labels = np.empty((0))
+    
+    for count in range(a, b):
+        
+        print('{}th dataset'.format(count))
+        input_file = "signals" + str(count) + ".npz"
+        npz_file = np.load(input_file, allow_pickle=True)   
+        
+        signals = npz_file['signals']
+        labels = npz_file['labels']
+        
+        print(signals.shape)
+        print(labels.shape)
+            
+        all_signals = np.concatenate((all_signals, signals), axis = 0)
+        all_labels = np.concatenate((all_labels, labels), axis = 0)
+    
+    print('Final shape : {}'.format(all_signals.shape))
+    print('Final labels shape : {}'.format(all_labels.shape))
+    
+    np.savez("final_signals.npz", signals=all_signals, labels=all_labels)
+    
+concatenate_datasets(0, 7)

@@ -7,7 +7,7 @@ class Args():
     def __init__(self):
 
         self.batch_size = 512
-        self.epochs = 150
+        self.epochs = 50
         self.lr = 5e-4
         self.momentum = 0.9
         self.seed = 42
@@ -53,7 +53,7 @@ class CNN(nn.Module):
 
     def forward(self, x):
 
-        x = F.elu(self.conv1(x))
+        x = F.relu(self.conv1(x))
         # x = F.max_pool1d(x, 2)
         x = self.batch1(x)
         x = F.dropout(x, p=0.15)
