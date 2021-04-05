@@ -1,1 +1,4 @@
 EEG_classification/data
+eeg*
+signals*
+final*
