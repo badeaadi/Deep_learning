@@ -6,12 +6,12 @@ import torch
 class Args():
     def __init__(self):
 
-        self.batch_size = 512
-        self.epochs = 100
-        self.lr = 5e-5
+        self.batch_size = 1024
+        self.epochs = 125
+        self.lr = 5e-4
         self.momentum = 0.9
         self.seed = 42
-        self.log_interval = int(2000 / self.batch_size)
+        self.log_interval = int(8000 / self.batch_size)
         self.cuda = True
 
 
@@ -25,7 +25,7 @@ no_neurons2 = 256
 no_neurons3 = 16
 out_features = 2
 
-in_features = 62 * 100
+in_features = int(6348800/1024)
 
 args = Args()
 
@@ -58,7 +58,7 @@ class CNN(nn.Module):
 
         # print(x.shape)
 
-        x = x.view(args.batch_size, -1)
+        x = x.view(-1, in_features)
 
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
