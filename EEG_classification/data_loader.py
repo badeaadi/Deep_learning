@@ -61,7 +61,6 @@ nonseizure_bufs = []
 seizure_bufs = []
 
 
-# print(records.index("chb04/chb04_28.edf"))
 
 count = 3
 
@@ -143,9 +142,6 @@ np.savez("signals" + str(count) + ".npz", signals=bufs, labels=bufs_labels)
 
 
 
-
-
-
 def concatenate_datasets(a : int, b : int):
     
     all_signals = np.empty((0, 23, 256))
@@ -172,3 +168,43 @@ def concatenate_datasets(a : int, b : int):
     np.savez("final_signals.npz", signals=all_signals, labels=all_labels)
     
 concatenate_datasets(0, 7)
+
+
+
+
+def make_stft_dataset():
+     
+    
+    '''
+    training_file = np.load('eeg-seizure_train.npz', allow_pickle=True)
+    train_signals = training_file['train_signals']
+    train_labels = training_file['train_labels']
+    
+    '''
+    val_file = np.load('eeg-seizure_val.npz', allow_pickle=True)
+    val_signals = val_file['val_signals']
+    val_labels = val_file['val_labels']
+    
+    '''
+    test_file = np.load('eeg-seizure_test.npz', allow_pickle=True)
+    test_signals = test_file['test_signals']
+    '''
+    
+    samples = []
+    for i in range(0, val_signals.shape[0]):
+        
+        sample = []
+        for j in range(0, val_signals.shape[1]):
+            y = librosa.stft(val_signals[i][j]).flatten()
+            sample.append(y)
+        
+        
+        if i % 100 == 0 :
+            print("{}th done with shape : {}".format(i, np.array(sample).shape))
+        
+        samples.append(np.array(sample))
+    
+    
+
+make_stft_dataset()
+
