@@ -203,7 +203,10 @@ def make_stft_dataset():
             print("{}th done with shape : {}".format(i, np.array(sample).shape))
         
         samples.append(np.array(sample))
-    
+        
+        np.savez("eeg-seizure_val_stft.npz",
+             val_signals=samples, val_labels=val_labels)
+
     
 
 make_stft_dataset()
