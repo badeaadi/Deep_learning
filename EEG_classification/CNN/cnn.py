@@ -7,11 +7,11 @@ class Args():
     def __init__(self):
 
         self.batch_size = 512
-        self.epochs = 50
+        self.epochs = 55
         self.lr = 5e-4
         self.momentum = 0.9
         self.seed = 42
-        self.log_interval = int(2000 / self.batch_size)
+        self.log_interval = int(8000 / self.batch_size)
         self.cuda = True
 
 

@@ -1,1 +1,6 @@
 EEG_classification/data
+*.png
+*.pt
+*.csv
+*.npz
+.vscode
