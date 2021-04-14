@@ -1,4 +1,4 @@
-from CNN_baseline import CNN, Args
+from VGG import VGG, Args
 from matplotlib import pyplot
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
@@ -27,7 +27,6 @@ def train(args, model, device, train_loader, optimizer, epoch, weight):
 
     for batch_idx, (data, target) in enumerate(train_loader):
 
-        
         data, target = data.to(device).float(), target.to(device).long()
 
         optimizer.zero_grad()
@@ -60,9 +59,8 @@ def test(args, model, device, test_loader, weight):
         num_iter = 0
         for data, target in test_loader:
 
-            
             data, target = data.to(device).float(), target.to(device).long()
-                
+
             output = model(data)
 
             test_loss += F.nll_loss(output, target, weight)
@@ -105,11 +103,12 @@ dataset_signals, dataset_labels = map(torch.tensor, (signals, labels))
 dataset_signals = dataset_signals.to(device)
 dataset_labels = dataset_labels.to(device).long()
 
-    
-print('Signals shape is : {} and type is {}'.format(dataset_signals.shape, dataset_signals.dtype))
 
-print('Labels shape is : {} and type is {}'.format(dataset_labels.shape, dataset_labels.dtype))
-    
+print('Signals shape is : {} and type is {}'.format(
+    dataset_signals.shape, dataset_signals.dtype))
+
+print('Labels shape is : {} and type is {}'.format(
+    dataset_labels.shape, dataset_labels.dtype))
 
 
 '''
@@ -137,26 +136,30 @@ test_dataset = TensorDataset(
 def create_datasets():
 
     no_val = int(0.85 * signals.shape[0])
-    
-    np.savez("eeg-seizure_train.npz", train_signals = dataset_signals[perm[:no_train]], train_labels = dataset_labels[perm[:no_train]])
-    
-    np.savez("eeg-seizure_val.npz", val_signals = dataset_signals[perm[no_train:no_val]], val_labels = dataset_labels[perm[no_train:no_val]])
-    
-    np.savez("eeg-seizure_test.npz", test_signals = dataset_signals[perm[no_val:]])
-    np.savez("eeg-seizure_test_labels.npz", test_labels = dataset_labels[perm[no_val:]])
-    
+
+    np.savez("eeg-seizure_train.npz",
+             train_signals=dataset_signals[perm[:no_train]], train_labels=dataset_labels[perm[:no_train]])
+
+    np.savez("eeg-seizure_val.npz",
+             val_signals=dataset_signals[perm[no_train:no_val]], val_labels=dataset_labels[perm[no_train:no_val]])
+
+    np.savez("eeg-seizure_test.npz",
+             test_signals=dataset_signals[perm[no_val:]])
+    np.savez("eeg-seizure_test_labels.npz",
+             test_labels=dataset_labels[perm[no_val:]])
+
     print('Seizures in train:')
-    
-    print(np.sum(np.array(dataset_labels[perm[:no_train]]), axis = 0))
+
+    print(np.sum(np.array(dataset_labels[perm[:no_train]]), axis=0))
     print('of')
     print(no_train)
-    
+
     print('Seizures in test and val:')
-    print(np.sum(np.array(dataset_labels[perm[no_train:]]), axis = 0))
+    print(np.sum(np.array(dataset_labels[perm[no_train:]]), axis=0))
     print('of')
     print(dataset_labels.shape[0] - no_train)
-    
-    
+
+
 create_datasets()
 
 
@@ -166,9 +169,7 @@ test_loader = DataLoader(
     test_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
 
 
-
 model = CNN().to(device)
-
 
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
@@ -181,7 +182,7 @@ for epoch in range(1, args.epochs + 1):
 
     train_loss = train(args, model, device, train_loader,
                        optimizer, epoch, weight_loss)
-    
+
     test_loss, test_accuracy = test(
         args, model, device, test_loader, weight_loss)
 
@@ -193,8 +194,6 @@ for epoch in range(1, args.epochs + 1):
 def plot_loss(loss, label, color='blue'):
     pyplot.plot(loss, label=label, color=color)
     pyplot.legend()
-
-
 
 
 pyplot.figure(1)
@@ -210,8 +209,6 @@ pyplot.show()
 torch.save(model.state_dict(), "mnist_eeg.pt")
 
 
-
-
 test = np.load('eeg-seizure_test_labels.npz', allow_pickle=True)
 labels = test['test_labels']
 
@@ -220,5 +217,3 @@ f = open('test.csv', 'w')
 
 for i in range(0, labels.shape[0]):
     f.write(str(i) + ',' + str(labels[i]) + '\n')
-    
-    

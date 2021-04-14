@@ -1,5 +1,5 @@
 import csv
-from CNN import CNN, Args
+from VGG import VGG, Args
 from matplotlib import pyplot
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
@@ -11,6 +11,9 @@ import os
 from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import shuffle
+
+import adabound
+
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 args = Args()
@@ -89,7 +92,7 @@ def test(args, model, device, test_loader, weight):
     return test_loss, test_accuracy
 
 
-def evaluate(args, model, device, data, weight):
+def evaluate(args, model, device, data):
     with torch.no_grad():
         data = torch.tensor(data)
         data = data.to(device).float()
@@ -105,31 +108,40 @@ def evaluate(args, model, device, data, weight):
     return pred
 
 
-training_file = np.load('eeg-seizure_train.npz', allow_pickle=True)
-train_signals = training_file['train_signals']
+training_file = np.load('eeg-seizure_train_mfcc.npz', allow_pickle=True)
+train_signals = np.real(training_file['train_signals'])
 train_labels = training_file['train_labels']
 
-val_file = np.load('eeg-seizure_val.npz', allow_pickle=True)
-val_signals = val_file['val_signals']
+print("Loaded training data")
+
+val_file = np.load('eeg-seizure_val_mfcc.npz', allow_pickle=True)
+val_signals = np.real(val_file['val_signals'])
 val_labels = val_file['val_labels']
 
-test_file = np.load('eeg-seizure_test.npz', allow_pickle=True)
-test_signals = test_file['test_signals']
+print("Loaded validation data")
 
-scaler = StandardScaler()
-scaler.fit(train_signals.reshape((-1, 23 * 256)))
+test_file = np.load('eeg-seizure_test_mfcc.npz', allow_pickle=True)
+test_signals = np.real(test_file['test_signals'])
 
-train_signals = scaler.transform(
-    train_signals.reshape((-1, 23 * 256))).reshape(train_signals.shape)
-val_signals = scaler.transform(
-    val_signals.reshape((-1, 23 * 256))).reshape(val_signals.shape)
-test_signals = scaler.transform(
-    test_signals.reshape((-1, 23 * 256))).reshape(test_signals.shape)
+print("Loaded test data")
+
+# num_points = 289
+
+# scaler = StandardScaler()
+# scaler.fit(train_signals.reshape((-1, 23 * num_points)))
+
+# train_signals = scaler.transform(
+#     train_signals.reshape((-1, 23 * num_points))).reshape(train_signals.shape)
+# val_signals = scaler.transform(
+#     val_signals.reshape((-1, 23 * num_points))).reshape(val_signals.shape)
+# test_signals = scaler.transform(
+#     test_signals.reshape((-1, 23 * num_points))).reshape(test_signals.shape)
 
 train_dataset_signals, train_dataset_labels = map(
     torch.tensor, (train_signals, train_labels))
 val_dataset_signals, val_dataset_labels = map(
     torch.tensor, (val_signals, val_labels))
+
 
 '''
 creste weight_loss[0] daca vrei sa prezica mai mult 0
@@ -160,11 +172,13 @@ val_loader = DataLoader(
     val_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
 
 
-model = CNN().to(device)
+model = VGG().to(device)
 
 
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-# optimizer = optim.Adam(model.parameters(), lr=args.lr, momentum=args.momentum)
+# optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+optimizer = optim.Adam(model.parameters(), lr=args.lr)
+# optimizer = adabound.AdaBound(
+#     model.parameters(), lr=args.lr, final_lr=args.final_lr)
 
 losses_train = []
 losses_test = []
@@ -201,8 +215,17 @@ pyplot.show()
 torch.save(model.state_dict(), "mnist_eeg.pt")
 
 model.load_state_dict(torch.load("mnist_eeg.pt"))
-predictions = evaluate(args, model, device, test_signals,
-                       weight_loss).cpu().detach().numpy()
+
+predictions1 = evaluate(args, model, device, test_signals[0:3000],
+                        ).cpu().detach().numpy()
+
+predictions2 = evaluate(args, model, device, test_signals[3000:6000],
+                        ).cpu().detach().numpy()
+
+predictions3 = evaluate(args, model, device, test_signals[6000:],
+                        ).cpu().detach().numpy()
+
+predictions = np.concatenate((predictions1, predictions2, predictions3))
 
 with open("predictions.csv", mode="w") as csv_file:
     writer = csv.writer(csv_file, delimiter=',', lineterminator='\n')
