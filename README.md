@@ -4,8 +4,9 @@ Each project has its own README
 
 For EEG Classification, more information on :
 
-https://www.kaggle.com/c/eeg-seizure-analysis/overview
-https://github.com/badeaadi/Deep_learning/blob/main/EEG_Seizure_Analysis.pdf
+[Kaggle Dataset](https://www.kaggle.com/c/eeg-seizure-analysis/overview)
+
+[Poster](https://github.com/badeaadi/Deep_learning/blob/main/EEG_Seizure_Analysis.pdf)
 
 
 ## EEG Classification
