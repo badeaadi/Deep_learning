@@ -1,6 +1,13 @@
 # Deep learning projects
 
-Each project has its own README
+Each project with its own README
+
+
+## EEG Classification
+
+In this task, we address a subdataset made from CHB-MIT Scalp EEG Database. 
+Our dataset contains every seizure part of the former dataset, and a smaller percentage of the non seizure dataset
+
 
 For EEG Classification, more information on :
 
@@ -8,11 +15,6 @@ For EEG Classification, more information on :
 
 [Poster](https://github.com/badeaadi/Deep_learning/blob/main/EEG_Seizure_Analysis.pdf)
 
-
-## EEG Classification
-
-In this task, we address a subdataset made from CHB-MIT Scalp EEG Database. 
-Our dataset contains every seizure part of the former dataset, and a smaller percentage of the non seizure dataset
 
 ### Dataset description :
 
